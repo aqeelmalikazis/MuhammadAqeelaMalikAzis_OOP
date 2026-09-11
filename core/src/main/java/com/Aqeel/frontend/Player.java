@@ -1,17 +1,30 @@
 package com.Aqeel.frontend;
 
-public class Player {
+public class Player extends GameObject {
     public String name;
     public int hp;
     public int power;
     public int spellCards;
+    public long score;
 
     public Player(String name, int hp, int power, int spellCards) {
+        super(280, 40, 32, 32, 0, Color.RED)
         this.name = name;
         this.hp = hp;
         this.power = power;
         this.spellCards = spellCards;
+        this.score = 0;
     }
+
+    public Player(float x, float y, String name, int hp, int power, int spellCards) {
+        super(x, y, 32, 32, 0, Color.RED)
+        this.name = name;
+        this.hp = hp;
+        this.power = power;
+        this.spellCards = spellCards;
+        this.score = 0;
+    }
+
     public void takeDamage(int damage) {
         // 1. Reduce hp by the damage value.
         hp -= damage;

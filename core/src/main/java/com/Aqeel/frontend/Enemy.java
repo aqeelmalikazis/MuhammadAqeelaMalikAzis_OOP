@@ -1,13 +1,23 @@
 package com.Aqeel.frontend;
 
-public class Enemy {
-    public String name;
-    public int hp;
-    public int maxHp;
+public class Enemy extends GameObject {
+    protected String name;
+    protected int hp;
+    protected int maxHp;
+    protected long scoreValue;
 
     public Enemy(String name, int hp) {
+        super(200, 380, 32, 24, 0, Color.PINK)
         this.name = name;
         this.hp = hp;
+        this.scoreValue = 100;
+    }
+
+    public Enemy(float x, float y, float width, float height, Color color, String name, int hp, long scoreValue) {
+        super(x, y, width, height , 0, Color.RED)
+        this.name = name;
+        this.hp = hp;
+        this.scoreValue = 100;
     }
     public void takeDamage(int damage) {
         // 1. Reduce hp by the damage value.
