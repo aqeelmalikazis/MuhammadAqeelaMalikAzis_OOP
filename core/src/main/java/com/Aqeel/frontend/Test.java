@@ -1,9 +1,9 @@
 package com.Aqeel.frontend;
 
-import com.Aqeel.frontend.enemies.Boss;
-import com.Aqeel.frontend.enemies.Enemy;
-import com.Aqeel.frontend.enemies.Fairy;
-import com.Aqeel.frontend.items.Item;
+import com.Aqeel.frontend.objects.enemies.Boss;
+import com.Aqeel.frontend.objects.enemies.Enemy;
+import com.Aqeel.frontend.objects.enemies.Fairy;
+import com.Aqeel.frontend.objects.items.Item;
 import com.Aqeel.frontend.objects.Player;
 
 public class Test {

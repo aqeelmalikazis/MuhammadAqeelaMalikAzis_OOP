@@ -1,4 +1,4 @@
-package com.Aqeel.frontend.enemies;
+package com.Aqeel.frontend.objects.enemies;
 
 import com.Aqeel.frontend.objects.GameObject;
 import com.Aqeel.frontend.objects.Player;
@@ -26,18 +26,21 @@ public class Enemy extends GameObject {
         this.scoreValue = scoreValue;
     }
     public boolean takeDamage(int damage) {
-
-        // 2. HP must not go below 0.
-        if (this.hp <= 0) {
-            return false;
-        }
+        boolean wasAlive = isAlive();
         this.hp -= damage;
-        if (this.hp <= 0) {
+        if (this.hp < 0) {
             this.hp = 0;
+        }
+        System.out.println(name + " took " + damage + " damage! HP: " + this.hp + "/" + this.maxHp);
+        if (wasAlive && this.hp == 0) {
+            System.out.println(name + " was defeated!");
+            // TODO: mark this enemy as destroyed
+            this.destroy();
             return true;
         }
         return false;
     }
+
     public void attack(Player player, int damage) {
         System.out.println(this.name + " unleashes bullet barrage on " + player.getName() + "!");
         player.takeDamage(damage);

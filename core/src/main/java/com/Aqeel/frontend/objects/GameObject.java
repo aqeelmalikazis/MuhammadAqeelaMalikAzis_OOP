@@ -2,6 +2,7 @@ package com.Aqeel.frontend.objects;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 
 public abstract class GameObject implements Collidable {
 
@@ -24,9 +25,11 @@ public abstract class GameObject implements Collidable {
     public void update(float delta) {
     }
 
-    public void render(ShapeRenderer shapeRenderer){
-        shapeRenderer.setColor(color);
-        shapeRenderer.rect(x, y, width, height);
+    public void render(ShapeRenderer shapeRenderer) {
+        if (shapeRenderer != null && color != null /* TODO: add a condition that the object is still active */ && this.active) {
+            shapeRenderer.setColor(color);
+            shapeRenderer.rect(x, y, width, height);
+        }
     }
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
@@ -55,18 +58,44 @@ public abstract class GameObject implements Collidable {
     @Override
     public Rectangle getCoreHitbox() {
         // TODO: return a new Rectangle matching this object's x, y, width, height
-        return new Rectangle(x, y, width, height);
+        return new Rectangle(getX(), getY(), getWidth(), getHeight());
     }
     @Override
     public Rectangle getGrazeHitbox() {
         // TODO: return a Rectangle with +10px padding on every side
-        return new Rectangle(x - 10, y - 10, width + 20, height + 20);
+        return new Rectangle(getX() - 10, getY() - 10, getWidth() + 20, getHeight() + 20);
     }
     @Override
     public void onCollision(Collidable other) {
         // Base collision handler (can be overridden by subclasses that need to react)
 
     }
+    protected boolean active = true;
+
+    public boolean isDestroyed() {
+        // TODO: return true if the object is NOT active (active == false)
+        return !this.active;
+    }
+
+    public void destroy() {
+        // TODO: mark this object as inactive
+        this.active = false;
+    }
+    public boolean isOffScreen(float screenWidth, float screenHeight) {
+        // TODO: return true if the x or y position is outside the screen boundaries
+        // Use a 50px tolerance margin on each side, so objects that have only
+        // slightly passed the edge of the screen are not immediately considered gone.
+        float tolerance = 50f;
+
+        return (this.x < -tolerance) ||
+            (this.x > screenWidth + tolerance) ||
+            (this.y < -tolerance) ||
+            (this.y > screenHeight + tolerance);
+
+    }
+
+
+
 
 
 

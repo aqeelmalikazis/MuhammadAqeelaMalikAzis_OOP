@@ -1,4 +1,4 @@
-package com.Aqeel.frontend.items;
+package com.Aqeel.frontend.objects.items;
 
 public enum ItemType {
     POWER(100L, 1),   // +100 score, +1 power bonus
@@ -10,12 +10,10 @@ public enum ItemType {
     private final int powerBonus;
 
     ItemType(long scoreValue, int powerBonus) {
-        // TODO: initialize scoreValue and powerBonus from the constructor parameters
         this.scoreValue = scoreValue;
         this.powerBonus = powerBonus;
     }
 
     public long getScoreValue() { return scoreValue; }
     public int getPowerBonus() { return powerBonus; }
-}
 }

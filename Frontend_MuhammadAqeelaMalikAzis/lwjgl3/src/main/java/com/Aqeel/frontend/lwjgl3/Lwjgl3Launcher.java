@@ -11,7 +11,7 @@ public class Lwjgl3Launcher {
         createApplication();
     }
 
-    private static Lwjgl3Application createApplication() {
+    private static Lwjgl3Application createApplication() {das
         return new Lwjgl3Application(new Main(), getDefaultConfiguration());
     }
 
