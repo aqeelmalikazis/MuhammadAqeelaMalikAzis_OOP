@@ -1,8 +1,8 @@
 package com.Aqeel.frontend.objects.enemies;
 
+import com.badlogic.gdx.graphics.Color;
 import com.Aqeel.frontend.objects.GameObject;
 import com.Aqeel.frontend.objects.Player;
-import com.badlogic.gdx.graphics.Color;
 
 public class Enemy extends GameObject {
     protected String name;
@@ -15,16 +15,17 @@ public class Enemy extends GameObject {
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
-        this.scoreValue = 100L;
+        this.scoreValue = 100;
     }
 
     public Enemy(float x, float y, float width, float height, Color color, String name, int hp, long scoreValue) {
-        super(x, y, width, height , 0, color);
+        super(x, y, width, height, 0, color);
         this.name = name;
         this.hp = hp;
         this.maxHp = hp;
         this.scoreValue = scoreValue;
     }
+
     public boolean takeDamage(int damage) {
         boolean wasAlive = isAlive();
         this.hp -= damage;
@@ -34,29 +35,27 @@ public class Enemy extends GameObject {
         System.out.println(name + " took " + damage + " damage! HP: " + this.hp + "/" + this.maxHp);
         if (wasAlive && this.hp == 0) {
             System.out.println(name + " was defeated!");
-            // TODO: mark this enemy as destroyed
-            this.destroy();
+            this.destroy(); // Mark enemy as destroyed/inactive so Iterator removes it!
             return true;
         }
         return false;
     }
 
     public void attack(Player player, int damage) {
-        System.out.println(this.name + " unleashes bullet barrage on " + player.getName() + "!");
+        System.out.println(name + " unleashes bullet barrage on " + player.getName() + "!");
         player.takeDamage(damage);
     }
 
     public boolean isAlive() {
-
         return this.hp > 0;
     }
+
+    // Encapsulation getters and setters
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
 
     public int getHp() { return hp; }
-    public void setHp(int hp) {
-        this.hp = Math.max(0, hp);
-    }
+    public void setHp(int hp) { this.hp = Math.max(0, hp); }
 
     public int getMaxHp() { return maxHp; }
 

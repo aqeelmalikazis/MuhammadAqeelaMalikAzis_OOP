@@ -1,17 +1,23 @@
 package com.Aqeel.frontend.objects;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 
 public abstract class GameObject implements Collidable {
-
     protected float x;
     protected float y;
     protected float width;
     protected float height;
     protected float speed;
     protected Color color;
+    protected TextureRegion sprite;
+    protected Animation<TextureRegion> animation;
+    protected float stateTime = 0f;
+    protected boolean active = true;
 
     public GameObject(float x, float y, float width, float height, float speed, Color color) {
         this.x = x;
@@ -23,14 +29,57 @@ public abstract class GameObject implements Collidable {
     }
 
     public void update(float delta) {
+        stateTime += delta;
     }
 
+    // Render with SpriteBatch (supports animated frames or static sprite)
+    public void render(SpriteBatch batch) {
+        if (batch != null && active) {
+            if (animation != null) {
+                TextureRegion currentFrame = animation.getKeyFrame(stateTime, true);
+                batch.draw(currentFrame, x, y, width, height);
+            } else if (sprite != null) {
+                batch.draw(sprite, x, y, width, height);
+            }
+        }
+    }
+
+    // Render fallback with ShapeRenderer (for geometric hitboxes)
     public void render(ShapeRenderer shapeRenderer) {
-        if (shapeRenderer != null && color != null /* TODO: add a condition that the object is still active */ && this.active) {
+        if (shapeRenderer != null && color != null && active) {
             shapeRenderer.setColor(color);
             shapeRenderer.rect(x, y, width, height);
         }
     }
+
+    @Override
+    public Rectangle getCoreHitbox() {
+        return new Rectangle(x, y, width, height);
+    }
+
+    @Override
+    public Rectangle getGrazeHitbox() {
+        return new Rectangle(x - 10, y - 10, width + 20, height + 20);
+    }
+
+    @Override
+    public void onCollision(Collidable other) {
+        // Base collision handler
+    }
+
+    public boolean isDestroyed() {
+        return !active;
+    }
+
+    public void destroy() {
+        this.active = false;
+    }
+
+    public boolean isOffScreen(float screenWidth, float screenHeight) {
+        return (x < -50 || x > screenWidth + 50 || y < -50 || y > screenHeight + 50);
+    }
+
+    // Encapsulation: Getters and Setters
     public float getX() { return x; }
     public void setX(float x) { this.x = x; }
 
@@ -55,49 +104,11 @@ public abstract class GameObject implements Collidable {
     public Color getColor() { return color; }
     public void setColor(Color color) { this.color = color; }
 
-    @Override
-    public Rectangle getCoreHitbox() {
-        // TODO: return a new Rectangle matching this object's x, y, width, height
-        return new Rectangle(getX(), getY(), getWidth(), getHeight());
-    }
-    @Override
-    public Rectangle getGrazeHitbox() {
-        // TODO: return a Rectangle with +10px padding on every side
-        return new Rectangle(getX() - 10, getY() - 10, getWidth() + 20, getHeight() + 20);
-    }
-    @Override
-    public void onCollision(Collidable other) {
-        // Base collision handler (can be overridden by subclasses that need to react)
+    public TextureRegion getSprite() { return sprite; }
+    public void setSprite(TextureRegion sprite) { this.sprite = sprite; }
 
-    }
-    protected boolean active = true;
+    public Animation<TextureRegion> getAnimation() { return animation; }
+    public void setAnimation(Animation<TextureRegion> animation) { this.animation = animation; }
 
-    public boolean isDestroyed() {
-        // TODO: return true if the object is NOT active (active == false)
-        return !this.active;
-    }
-
-    public void destroy() {
-        // TODO: mark this object as inactive
-        this.active = false;
-    }
-    public boolean isOffScreen(float screenWidth, float screenHeight) {
-        // TODO: return true if the x or y position is outside the screen boundaries
-        // Use a 50px tolerance margin on each side, so objects that have only
-        // slightly passed the edge of the screen are not immediately considered gone.
-        float tolerance = 50f;
-
-        return (this.x < -tolerance) ||
-            (this.x > screenWidth + tolerance) ||
-            (this.y < -tolerance) ||
-            (this.y > screenHeight + tolerance);
-
-    }
-
-
-
-
-
-
-
+    public boolean isActive() { return active; }
 }
