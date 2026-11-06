@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.Aqeel.frontend.objects.Collidable;
 import com.Aqeel.frontend.objects.GameObject;
 import com.Aqeel.frontend.objects.enemies.Enemy;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 public class Bullet extends GameObject {
     private BulletType bulletType;
@@ -30,7 +31,7 @@ public class Bullet extends GameObject {
         // 4. Mark this bullet as belonging to the player (isPlayerBullet), and set graze status to inactive
         this.bulletType = bulletType;
         this.damage = damage;
-        this.vx = 0;
+        this.vx = 0f;
         this.vy = 400f;
         this.angle = 90f;
         this.isPlayerBullet = true;
@@ -47,7 +48,7 @@ public class Bullet extends GameObject {
         // 4. Mark this bullet as belonging to the player (isPlayerBullet), and set graze status to inactive
         this.bulletType = bulletType;
         this.damage = damage;
-        this.vx = 0;
+        this.vx = 0f;
         this.vy = speed;
         this.angle = speed < 0 ? 270f : 90f;
         this.isPlayerBullet = true;
@@ -63,18 +64,21 @@ public class Bullet extends GameObject {
         // 4. Save the bullet's identity attributes (bulletType, damage, and isPlayerBullet) from the parameters
         // 5. Reactivate this bullet and reset its animation state time from 0
         // 6. Make sure the grazed status is reset to inactive so this recycled bullet can be grazed again
-        setX(x);
-        setY(y);
+        this.x = x;
+        this.y = y;
         this.vx = vx;
         this.vy = vy;
         this.angle = (float) Math.toDegrees(Math.atan2(vy, vx));
-        setSpeed((float) Math.hypot(vx, vy));
+        float mag = (float) Math.hypot(vx, vy);
+        if (mag > 0f) {
+            this.speed = mag;
+        }
         this.bulletType = bulletType;
         this.damage = damage;
         this.isPlayerBullet = isPlayerBullet;
         this.active = true;
         this.stateTime = 0f;
-        this.grazed = false;
+        this.grazed = false; // Reset graze state for recycled pooled bullet
     }
 
     @Override
@@ -83,8 +87,8 @@ public class Bullet extends GameObject {
         // TODO:
         // 1. Update position x by adding velocity component vx multiplied by delta
         // 2. Update position y by adding velocity component vy multiplied by delta
-        setX(getX() + (vx * delta));
-        setY(getY() + (vy * delta));
+        this.x += vx * delta;
+        this.y += vy * delta;
     }
 
     @Override
@@ -94,7 +98,7 @@ public class Bullet extends GameObject {
                 // TODO: Draw the bullet sprite using batch.draw() with the following parameters:
                 // sprite, position (x, y), rotation pivot origin at center (width / 2f, height / 2f),
                 // dimensions (width, height), scale (1f, 1f), and rotation angle (angle - 90f)
-                batch.draw(sprite, getX(), getY(), getWidth() / 2f, getHeight() / 2f, getWidth(), getHeight(), 1f, 1f, angle - 90f);
+                batch.draw(sprite, x, y, width / 2f, height / 2f, width, height, 1f, 1f, angle - 90f);
             } else {
                 super.render(batch);
             }
@@ -103,9 +107,9 @@ public class Bullet extends GameObject {
 
     @Override
     public void onCollision(Collidable other) {
-        if (other instanceof Enemy enemy) {
+        if (other instanceof Enemy enemy && isPlayerBullet) {
             System.out.println("Bullet hit " + enemy.getName() + " for " + damage + " DMG!");
-            boolean defeated = enemy.takeDamage(damage);
+            enemy.takeDamage(damage);
             this.destroy(); // Bullet is destroyed on collision
         }
     }
@@ -118,13 +122,13 @@ public class Bullet extends GameObject {
     // 2. Create a getter and setter for angle
     // 3. Create a getter hasBeenGrazed() that returns the grazed attribute
     // 4. Create a setter setGrazed(boolean grazed)
-    public BulletType getBulletType() { return bulletType; }
-    public int getDamage() { return damage; }
     public boolean isPlayerBullet() { return isPlayerBullet; }
     public float getVx() { return vx; }
     public float getVy() { return vy; }
+
     public float getAngle() { return angle; }
     public void setAngle(float angle) { this.angle = angle; }
+
     public boolean hasBeenGrazed() { return grazed; }
     public void setGrazed(boolean grazed) { this.grazed = grazed; }
 }

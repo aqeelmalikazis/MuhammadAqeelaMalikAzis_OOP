@@ -2,6 +2,8 @@ package com.Aqeel.frontend.objects.enemies;
 
 import com.Aqeel.frontend.systems.BulletManager;
 import com.badlogic.gdx.graphics.Color;
+import com.Aqeel.frontend.objects.patterns.shootingStrategy.ShootingPattern;
+import com.Aqeel.frontend.objects.patterns.shootingStrategy.SpreadShot;
 
 public class Boss extends Enemy {
     // TODO: Declare a private field named `shootingPattern` of type ShootingPattern
@@ -22,7 +24,7 @@ public class Boss extends Enemy {
     //       execute shootingPattern at the boss's center cone coordinates (x + width / 2 - 8, y).
     public void shootBullet(BulletManager bulletManager) {
         if (shootingPattern != null && !isDestroyed()) {
-            shootingPattern.execute(getX() + getWidth() / 2f - 8f, getY(), bulletManager, false);
+            shootingPattern.execute(x + width / 2 - 8, y, bulletManager, false);
         }
     }
 

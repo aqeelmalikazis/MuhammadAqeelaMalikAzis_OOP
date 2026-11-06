@@ -119,7 +119,7 @@ public class StartupHelper {
         // avoids looping, but most certainly leads to a crash
         if ("true".equals(System.getProperty(JVM_RESTARTED_ARG))) {
             System.err.println(
-                    "There was a problem evaluating whether the JVM was started with the -XstartOnFirstThread argument.");
+                "There was a problem evaluating whether the JVM was started with the -XstartOnFirstThread argument.");
             return false;
         }
 
@@ -133,7 +133,7 @@ public class StartupHelper {
 
         if (!(new File(javaExecPath)).exists()) {
             System.err.println(
-                    "A Java installation could not be found. If you are distributing this app with a bundled JRE, be sure to set the -XstartOnFirstThread argument manually!");
+                "A Java installation could not be found. If you are distributing this app with a bundled JRE, be sure to set the -XstartOnFirstThread argument manually!");
             return false;
         }
 
@@ -161,9 +161,9 @@ public class StartupHelper {
                 processBuilder.start();
             } else {
                 Process process = (new ProcessBuilder(jvmArgs))
-                        .redirectErrorStream(true).start();
+                    .redirectErrorStream(true).start();
                 BufferedReader processOutput = new BufferedReader(
-                        new InputStreamReader(process.getInputStream()));
+                    new InputStreamReader(process.getInputStream()));
                 String line;
 
                 while ((line = processOutput.readLine()) != null) {

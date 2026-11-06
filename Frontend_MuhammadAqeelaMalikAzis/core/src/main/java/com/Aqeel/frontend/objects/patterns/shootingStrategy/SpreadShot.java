@@ -1,5 +1,9 @@
 package com.Aqeel.frontend.objects.patterns.shootingStrategy;
 
+import com.Aqeel.frontend.objects.GameObject;
+import com.Aqeel.frontend.objects.patterns.shootingStrategy.ShootingPattern;
+import com.Aqeel.frontend.systems.BulletManager;
+
 public class SpreadShot implements ShootingPattern {
     private float speed;
     private int numBullets;
