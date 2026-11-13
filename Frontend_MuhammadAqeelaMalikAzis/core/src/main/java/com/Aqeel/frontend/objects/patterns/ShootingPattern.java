@@ -1,4 +1,4 @@
-package com.Aqeel.frontend.objects.patterns.shootingStrategy;
+package com.Aqeel.frontend.objects.patterns;
 
 import com.Aqeel.frontend.systems.BulletManager;
 

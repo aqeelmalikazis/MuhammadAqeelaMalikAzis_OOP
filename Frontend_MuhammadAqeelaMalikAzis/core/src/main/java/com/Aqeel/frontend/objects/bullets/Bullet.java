@@ -1,6 +1,7 @@
 package com.Aqeel.frontend.objects.bullets;
 
 import com.badlogic.gdx.graphics.Color;
+import com.Aqeel.frontend.objects.patterns.bulletStrategy.BulletMovementPattern;
 import com.Aqeel.frontend.objects.Collidable;
 import com.Aqeel.frontend.objects.GameObject;
 import com.Aqeel.frontend.objects.enemies.Enemy;
@@ -20,6 +21,7 @@ public class Bullet extends GameObject {
     private float angle = 90f;
     private boolean isPlayerBullet;
     private boolean grazed;
+    private BulletMovementPattern movementPattern;
 
     // Constructor with default speed (speed = 400f)
     public Bullet(float x, float y, BulletType bulletType, int damage) {
@@ -79,6 +81,7 @@ public class Bullet extends GameObject {
         this.active = true;
         this.stateTime = 0f;
         this.grazed = false; // Reset graze state for recycled pooled bullet
+        this.movementPattern = null;
     }
 
     @Override
@@ -87,8 +90,12 @@ public class Bullet extends GameObject {
         // TODO:
         // 1. Update position x by adding velocity component vx multiplied by delta
         // 2. Update position y by adding velocity component vy multiplied by delta
-        this.x += vx * delta;
-        this.y += vy * delta;
+        if (movementPattern != null) {
+            movementPattern.move(this, delta);
+        } else {
+            this.x += vx * delta;
+            this.y += vy * delta;
+        }
     }
 
     @Override
@@ -113,6 +120,10 @@ public class Bullet extends GameObject {
             this.destroy(); // Bullet is destroyed on collision
         }
     }
+
+    public BulletMovementPattern getMovementPattern() { return movementPattern; }
+    public void setMovementPattern(BulletMovementPattern movementPattern) { this.movementPattern = movementPattern; }
+    public float getStateTime() { return stateTime; }
 
     public BulletType getBulletType() { return bulletType; }
     public int getDamage() { return damage; }

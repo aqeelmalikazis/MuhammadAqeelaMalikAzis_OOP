@@ -1,5 +1,8 @@
 package com.Aqeel.frontend.objects;
 
+import com.Aqeel.frontend.objects.patterns.bulletStrategy.HomingBulletMovement;
+import com.Aqeel.frontend.objects.patterns.shootingStrategy.CompositeShootingPattern;
+import com.Aqeel.frontend.objects.patterns.shootingStrategy.SideShot;
 import com.Aqeel.frontend.observers.GameObserver;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -19,12 +22,13 @@ import com.Aqeel.frontend.objects.enemies.Boss;
 import com.Aqeel.frontend.objects.enemies.Enemy;
 import com.Aqeel.frontend.objects.enemies.Fairy;
 import com.Aqeel.frontend.objects.patterns.shootingStrategy.SpreadShot;
+import com.Aqeel.frontend.objects.patterns.entityStrategy.FixedMovement;
 import com.Aqeel.frontend.systems.AssetManager;
 import com.Aqeel.frontend.systems.BulletManager;
-import com.Aqeel.frontend.objects.patterns.shootingStrategy.ShootingPattern;
+import com.Aqeel.frontend.objects.patterns.ShootingPattern;
 import com.Aqeel.frontend.systems.EntityFactory;
 
-public class Player extends GameObject {
+public class Player extends EntityShooter {
     private String name;
     private int lives = 3;
     private int hp;
@@ -32,7 +36,6 @@ public class Player extends GameObject {
     private int spellCards;
     private long score;
     private int currentDir = 0; // -1: Left, 0: Idle, 1: Right
-    private ShootingPattern shootingPattern;
 
     // TODO: Declare the following private attributes:
     // 1. int grazeCount with an initial value of 0 (stores the number of grazed bullets)
@@ -42,14 +45,21 @@ public class Player extends GameObject {
     // 5. float invulnerableTimer with an initial value of 0f (timer tracking invulnerability duration after respawn / bomb)
     private int grazeCount = 0;
     private boolean focused = false;
-    private float shootTimer = 0.1f;
-    private float shootCooldown = 0.1f;
+    private float shootTimer = shootCooldown;
+    private float homingCooldown = 30f / 60f;
+    private float homingShootTimer = homingCooldown;
+    private float shootCooldown = 5f / 60f;
     private float invulnerableTimer = 0f;
+
+    private ShootingPattern mainShootingPattern;
+    private ShootingPattern sideShootingPattern;
     // TODO: Declare a private attribute List<GameObserver> observers and initialize it with an empty ArrayList
     private List<GameObserver> observers = new ArrayList<>();
 
     public Player(String name, int hp, int power, int spellCards) {
-        super(280, 40, 32, 48, 200f, Color.RED);
+        super(200, 50, 32, 48, 200f, Color.RED, null, new FixedMovement());
+        setMovementPattern(new FixedMovement());
+        updatePowerStrategy();
         this.name = name;
         this.hp = hp;
         this.power = power;
@@ -58,7 +68,9 @@ public class Player extends GameObject {
     }
 
     public Player(float x, float y, String name, int hp, int power, int spellCards) {
-        super(x, y, 32, 48, 200f, Color.RED);
+        super(x, y, 32, 48, 200f, Color.RED, null, new FixedMovement());
+        setMovementPattern(new FixedMovement());
+        updatePowerStrategy();
         this.name = name;
         this.hp = hp;
         this.power = power;
@@ -110,6 +122,100 @@ public class Player extends GameObject {
         }
     }
 
+    // TODO (6 points): Implement Dynamic Strategy Swapping on Player Reimu
+    public void updatePowerStrategy() {
+        float spreadAngle = focused ? 4f : 18f;
+        float dualSpreadAngle = focused ? 3f : 12f;
+        float sideHOffset = focused ? 8f : 24f;
+        float sideVOffset = focused ? 16f : -16f;
+        float leftAngle = focused ? 100f : 120f;
+        float rightAngle = focused ? 80f : 60f;
+
+        float normalSpeed = 720f;
+        float homingSpeed = 500f;
+
+        // 2. Evaluate player power ranks (Authentic Touhou 6 EoSD Power Ranks):
+        if (power < 8) {
+            // Rank 1 (Power 0 - 7): 1 Center Straight Shot
+            // TODO: Set Main Shooting Pattern as FrontShot with normalSpeed and DMG 48
+            // TODO: Set Side Shooting Pattern as null
+            mainShootingPattern = new Frontshot(normalSpeed, 48);
+            sideShootingPattern = null
+            homingCooldown = 30f / 60f;
+        } else if (power < 16) {
+            // Rank 2 (Power 8 - 15): 1 Center Straight Shot + 2 Homing Flank Amulets (Homing SideShot)
+            // TODO: Set Main Shooting Pattern as FrontShot with normalSpeed and DMG 48
+            // TODO: Set Side Shooting Pattern as SideShot with homingSpeed, DMG 14, offsets (sideHOffset, sideVOffset), angles (leftAngle, rightAngle), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            mainShootingPattern = new Frontshot(normalSpeed, 48);
+            sideShootingPattern = new SideShot(
+                homingSpeed, 14, sideHOffset, sideVOffset,
+                leftAngle, rightAngle, true,
+                new HomingBulletMovement(null, null, 360f),
+                "bullet_amulet_homing"
+                );
+            homingCooldown = 30f / 60f;
+        } else if (power < 32) {
+            // Rank 3 (Power 16 - 31): 2 Tightly Spaced Center Straight Shots + 2 Homing Flank Amulets
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 2 bullets, angle dualSpreadAngle, DMG 30, horizontalSpacing 8f, and null for movementPattern, target, and spriteKey
+            // TODO: Set Side Shooting Pattern as SideShot with homingSpeed, DMG 14, offsets (sideHOffset, sideVOffset), angles (leftAngle, rightAngle), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            mainShootingPattern = new SpreadShot(normalSpeed, 2, dualSpreadAngle, 30,8f, null, null);
+            sideShootingPattern = new SideShot(
+                homingSpeed, 14, sideHOffset, sideVOffset,
+                leftAngle, rightAngle, true,
+                new HomingBulletMovement(null, null, 360f),
+                "bullet_amulet_homing"
+            );
+            homingCooldown = 30f / 60f;
+        } else if (power < 48) {
+            // Rank 4 (Power 32 - 47): 3 Center Fan Spread Shots + 2 Homing Flank Amulets
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 3 bullets, angle spreadAngle, and DMG 26
+            // TODO: Set Side Shooting Pattern as SideShot with homingSpeed, DMG 14, offsets (sideHOffset, sideVOffset), angles (leftAngle, rightAngle), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            mainShootingPattern = new SpreadShot(normalspeed, 3, spreadAngle, 26);
+            sideShootingPattern = new SideShot(
+                homingSpeed, 14, sideHOffset, sideVOffset,
+                leftAngle, rightAngle, true,
+                new HomingBulletMovement(null, null, 360f),
+                "bullet_amulet_homing"
+            );
+            homingCooldown = 30f / 60f;
+        } else if (power < 64) {
+            // Rank 5 (Power 48 - 63): 3 Center Fan Spread Shots + Homing Amulets (Cadence accelerated to 15 frames / 0.25s!)
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 3 bullets, angle spreadAngle, and DMG 26
+            // TODO: Set Side Shooting Pattern as SideShot with homingSpeed, DMG 12, offsets (sideHOffset, sideVOffset), angles (leftAngle, rightAngle), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            homingCooldown = 15f / 60f;
+        } else if (power < 80) {
+            // Rank 6 (Power 64 - 79): 3 Center Fan Spread Shots + 4 Homing Amulets (Composite Pattern)
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 3 bullets, angle spreadAngle, and DMG 26
+            // TODO: Set Side Shooting Pattern as CompositeShootingPattern with 2 SideShots:
+            //       1) SideShot with homingSpeed, DMG 9, offsets (sideHOffset, sideVOffset), angles (leftAngle, rightAngle), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            //       2) SideShot with homingSpeed, DMG 12, offsets (sideHOffset + 4f, sideVOffset), angles (leftAngle + 30f, rightAngle - 30f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            homingCooldown = 15f / 60f;
+        } else if (power < 128) {
+            // Rank 7 & 8 (Power 80 - 127): 3 Center Fan Spread Shots + 4 Tightly Angled Homing Amulets
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 3 bullets, angle spreadAngle, and DMG 26
+            // TODO: Set Side Shooting Pattern as CompositeShootingPattern with 2 SideShots:
+            //       1) SideShot with homingSpeed, DMG 8, offsets (sideHOffset, sideVOffset), angles (leftAngle - 10f, rightAngle + 10f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            //       2) SideShot with homingSpeed, DMG 8, offsets (sideHOffset + 4f, sideVOffset), angles (leftAngle + 10f, rightAngle - 10f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            homingCooldown = 15f / 60f;
+        } else {
+            // Rank 9 (Power 128 MAX): 4 Spaced Center Fan Spread Shots + 6 Maximum Homing Amulets
+            // TODO: Set Main Shooting Pattern as SpreadShot with normalSpeed, 4 bullets, angle spreadAngle * 1.2f, DMG 24, horizontalSpacing 16f, and null for movementPattern, target, and spriteKey
+            // TODO: Set Side Shooting Pattern as CompositeShootingPattern with 3 SideShots:
+            //       1) SideShot with homingSpeed, DMG 8, offsets (sideHOffset, sideVOffset), angles (leftAngle - 10f, rightAngle + 10f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            //       2) SideShot with homingSpeed, DMG 8, offsets (sideHOffset + 4f, sideVOffset), angles (leftAngle + 10f, rightAngle - 10f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            //       3) SideShot with homingSpeed, DMG 8, offsets (sideHOffset + 8f, sideVOffset), angles (leftAngle + 30f, rightAngle - 30f), dualSides true; with bullet movement HomingBulletMovement having turnSpeed 360f; and sprite "bullet_amulet_homing"
+            homingCooldown = 15f / 60f;
+        }
+
+        // 3. Attach composite strategy to superclass EntityShooter attribute
+        if (sideShootingPattern != null) {
+            setShootingPattern(new CompositeShootingPattern(mainShootingPattern, sideShootingPattern));
+        } else {
+            setShootingPattern(mainShootingPattern);
+        }
+    }
+
+
     // Observer Registration & Removal (4 points)
     public void registerObserver(GameObserver observer) {
         // TODO:
@@ -123,7 +229,7 @@ public class Player extends GameObject {
         //      * observer.onSpellCardsChanged(spellCards);
         //      * observer.onPowerChanged(power);
         //      * observer.onGrazeChanged(grazeCount);
-        if (observer != null &&  observers.contains(observer)) {
+        if (observer != null && !observers.contains(observer)) {
             observers.add(observer);
             observer.onScoreChanged(score);
             observer.onHpChanged(hp);
@@ -182,11 +288,15 @@ public class Player extends GameObject {
 
     @Override
     public void update(float delta) {
-        super.update(delta); // Advances stateTime for idle animations
-        // TODO: Increment shootTimer by delta (shootTimer += delta;)
+        super.update(delta); // Advances stateTime and movementPattern
         shootTimer += delta;
+        homingShootTimer += delta;
 
-        // Player movement handling (LibGDX input)
+        if (shootTimer > 0.15f) {
+            shootTimer = shootCooldown;
+            homingShootTimer = homingCooldown;
+        }
+
         if (invulnerableTimer > 0f) {
             invulnerableTimer -= delta;
             if (invulnerableTimer < 0f) invulnerableTimer = 0f;
@@ -244,10 +354,8 @@ public class Player extends GameObject {
 
         // Strategy Pattern Bullet Shooting (Polymorphic with Boss)
         public void shootBullet(BulletManager bulletManager) {
-            if (bulletManager == null) return;
+            if (bulletManager == null || isDestroyed() || shootTimer < shootCooldown) return;
 
-            // TODO 1: Check whether shootTimer is greater than or equal to shootCooldown.
-            // If YES:
             if (shootingPattern != null) {
                 shootingPattern.execute(x + width / 2f - 8f, y + height, bulletManager, true);
             } else {
@@ -261,7 +369,7 @@ public class Player extends GameObject {
         public ShootingPattern getShootingPattern() { return shootingPattern; }
         public void setShootingPattern(ShootingPattern shootingPattern) { this.shootingPattern = shootingPattern; }
 
-        public void moveUp(float delta) { this.y += speed * delta; }
+    public void moveUp(float delta) { this.y += speed * delta; }
     public void moveDown(float delta) { this.y -= speed * delta; }
     public void moveLeft(float delta) { this.x -= speed * delta; }
     public void moveRight(float delta) { this.x += speed * delta; }
@@ -342,11 +450,8 @@ public class Player extends GameObject {
                 }
                 return;
             }
-            this.hp -= damage;
-            if (this.hp < 0) {
-                this.hp = 0;
-                notifyHpChanged();
-            }
+            this.hp = Math.max(0, this.hp - damage);
+            notifyHpChanged();
             System.out.println(name + " took " + damage + " damage! Remaining HP: " + this.hp);
             if (this.hp == 0) {
                 System.out.println(name + " was defeated (Pichuun~)! ");
@@ -398,6 +503,8 @@ public class Player extends GameObject {
             this.active = true;
             this.x = 200;
             this.y = 50;
+            this.focused = false;
+            this.shootTimer = shootCooldown;
             this.invulnerableTimer = 3.0f;
             notifyLivesChanged();
             notifyHpChanged();
@@ -463,7 +570,10 @@ public class Player extends GameObject {
         }
 
         public int getLives() { return lives; }
-        public void setLives(int lives) { this.lives = lives; notifyHpChanged(); }
+        public void setLives(int lives) {
+            this.lives = Math.max(0, lives);
+            notifyLivesChanged();
+        }
 
     // Encapsulation getters and setters
     public String getName() { return name; }

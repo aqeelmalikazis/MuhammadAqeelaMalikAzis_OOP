@@ -1,7 +1,9 @@
 package com.Aqeel.frontend.objects.patterns.shootingStrategy;
 
 import com.Aqeel.frontend.objects.GameObject;
-import com.Aqeel.frontend.objects.patterns.shootingStrategy.ShootingPattern;
+import com.Aqeel.frontend.objects.bullets.Bullet;
+import com.Aqeel.frontend.objects.patterns.ShootingPattern;
+import com.Aqeel.frontend.objects.patterns.bulletStrategy.BulletMovementPattern;
 import com.Aqeel.frontend.systems.BulletManager;
 
 public class SpreadShot implements ShootingPattern {
@@ -9,61 +11,81 @@ public class SpreadShot implements ShootingPattern {
     private int numBullets;
     private float spreadAngleDegrees;
     private GameObject target;
+    private int damage = 1;
+    private float horizontalSpacing = 0f;
+    private BulletMovementPattern bulletMovementPattern;
+    private String spriteKey;
 
-    // Static angle SpreadShot constructor
     public SpreadShot(float speed, int numBullets, float spreadAngleDegrees) {
-        this(speed, numBullets, spreadAngleDegrees, null);
+        this(speed, numBullets, spreadAngleDegrees, 1, 0f, null, null, null);
     }
-
-    // Targeted SpreadShot constructor (FAN_AIMED) that aims at a target
+    public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, int damage) {
+        this(speed, numBullets, spreadAngleDegrees, damage, 0f, null, null, null);
+    }
     public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, GameObject target) {
+        this(speed, numBullets, spreadAngleDegrees, 1, 0f, null, target, null);
+    }
+    public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, GameObject target, int damage) {
+        this(speed, numBullets, spreadAngleDegrees, damage, 0f, null, target, null);
+    }
+    public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, int damage,
+                      BulletMovementPattern bulletMovementPattern) {
+        this(speed, numBullets, spreadAngleDegrees, damage, 0f, bulletMovementPattern, null, null);
+    }
+    public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, int damage,
+                      GameObject target, String spriteKey) {
+        this(speed, numBullets, spreadAngleDegrees, damage, 0f, null, target, spriteKey);
+    }
+    public SpreadShot(float speed, int numBullets, float spreadAngleDegrees, int damage,
+                      float horizontalSpacing, BulletMovementPattern bulletMovementPattern,
+                      GameObject target, String spriteKey) {
         this.speed = speed;
-        this.numBullets = numBullets;
+        this.numBullets = Math.max(0, numBullets);
         this.spreadAngleDegrees = spreadAngleDegrees;
+        this.damage = damage;
+        this.horizontalSpacing = horizontalSpacing;
+        this.bulletMovementPattern = bulletMovementPattern;
         this.target = target;
+        this.spriteKey = spriteKey;
     }
 
     @Override
     public void execute(float originX, float originY, BulletManager bulletManager, boolean isPlayer) {
-        // Base center angle: if there is a target, aim at it; otherwise, use 90° (Player) / 270° (Enemy)
+        if (bulletManager == null || numBullets <= 0) return;
         float centerAngle;
-        if (target != null) {
-            float targetCenterX = target.getX() + target.getWidth() / 2f;
-            float targetCenterY = target.getY() + target.getHeight() / 2f;
-            centerAngle = (float) Math.toDegrees(Math.atan2(targetCenterY - originY, targetCenterX - originX));
-        } else {
-            centerAngle = isPlayer ? 90f : 270f;
-        }
+        if (target != null && !target.isDestroyed()) {
+            float tx = target.getX() + target.getWidth() / 2f;
+            float ty = target.getY() + target.getHeight() / 2f;
+            centerAngle = (float)Math.toDegrees(Math.atan2(ty - originY, tx - originX));
+        } else centerAngle = isPlayer ? 90f : 270f;
 
-        float startAngle = centerAngle - (spreadAngleDegrees / 2f);
-        float angleStep = (numBullets > 1) ? (spreadAngleDegrees / (numBullets - 1)) : 0;
-        int damage = isPlayer ? 25 : 15;
+        float startAngle = centerAngle - spreadAngleDegrees / 2f;
+        float angleStep = numBullets > 1 ? spreadAngleDegrees / (numBullets - 1) : 0f;
+        float startX = horizontalSpacing > 0f && numBullets > 1
+                ? originX - (numBullets - 1) * horizontalSpacing / 2f : originX;
+        int bulletDamage = isPlayer ? 25 : damage;
 
         for (int i = 0; i < numBullets; i++) {
-            float angleDeg = startAngle + (i * angleStep);
-            float angleRad = (float) Math.toRadians(angleDeg);
-
-            // Decompose velocity into X and Y axes
-            float vx = (float) (speed * Math.cos(angleRad));
-            float vy = (float) (speed * Math.sin(angleRad));
-
-            if (isPlayer) {
-                bulletManager.spawnPlayerBullet(originX, originY, vx, vy, damage);
-            } else {
-                bulletManager.spawnEnemyBullet(originX, originY, vx, vy, damage);
-            }
+            float angleRad = (float)Math.toRadians(startAngle + i * angleStep);
+            float vx = (float)(speed * Math.cos(angleRad));
+            float vy = (float)(speed * Math.sin(angleRad));
+            float spawnX = horizontalSpacing > 0f && numBullets > 1 ? startX + i * horizontalSpacing : originX;
+            Bullet bullet;
+            if (isPlayer) bullet = bulletManager.spawnPlayerBullet(spawnX, originY, vx, vy, bulletDamage, spriteKey);
+            else bullet = spriteKey != null
+                    ? bulletManager.spawnEnemyBullet(spawnX, originY, vx, vy, bulletDamage, spriteKey)
+                    : bulletManager.spawnEnemyBullet(spawnX, originY, vx, vy, bulletDamage);
+            if (bullet != null && bulletMovementPattern != null) bullet.setMovementPattern(bulletMovementPattern);
         }
     }
 
-    public float getSpeed() { return speed; }
-    public void setSpeed(float speed) { this.speed = speed; }
-
-    public int getNumBullets() { return numBullets; }
-    public void setNumBullets(int numBullets) { this.numBullets = numBullets; }
-
-    public float getSpreadAngleDegrees() { return spreadAngleDegrees; }
-    public void setSpreadAngleDegrees(float spreadAngleDegrees) { this.spreadAngleDegrees = spreadAngleDegrees; }
-
-    public GameObject getTarget() { return target; }
-    public void setTarget(GameObject target) { this.target = target; }
+    public float getSpeed() { return speed; } public void setSpeed(float speed) { this.speed = speed; }
+    public int getNumBullets() { return numBullets; } public void setNumBullets(int n) { this.numBullets = Math.max(0, n); }
+    public float getSpreadAngleDegrees() { return spreadAngleDegrees; } public void setSpreadAngleDegrees(float a) { this.spreadAngleDegrees = a; }
+    public GameObject getTarget() { return target; } public void setTarget(GameObject target) { this.target = target; }
+    public int getDamage() { return damage; } public void setDamage(int damage) { this.damage = damage; }
+    public float getHorizontalSpacing() { return horizontalSpacing; } public void setHorizontalSpacing(float s) { this.horizontalSpacing = s; }
+    public BulletMovementPattern getBulletMovementPattern() { return bulletMovementPattern; }
+    public void setBulletMovementPattern(BulletMovementPattern p) { this.bulletMovementPattern = p; }
+    public String getSpriteKey() { return spriteKey; } public void setSpriteKey(String key) { this.spriteKey = key; }
 }
